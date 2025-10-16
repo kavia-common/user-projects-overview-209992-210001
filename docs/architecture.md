@@ -1,12 +1,12 @@
 # Architecture — User Projects Frontend
 
 ## System Overview
-The User Projects Frontend is a Create React App (CRA) based UI that renders a list of projects belonging to the authenticated user. It uses a mock authentication context and a mock projects service to simulate a backend. The Ocean Professional theme guides the visual design: clean, modern, with blue primary accents, rounded corners, subtle shadows, and gradients.
+The application is a Create React App (CRA)–based UI that lists projects belonging to the authenticated user. It uses a mock authentication context and a mock projects service to simulate a backend. The Ocean Professional theme guides the visual design with blue primary accents, rounded corners, subtle shadows, and gradients.
 
 ## Containers and Dependencies
 - Frontend container: user_projects_frontend (React + CRA)
-- External dependency reference: user_projects_db (project-level dependency placeholder; no direct connection in this repo)
-- No backend service exists in this repository; all project data is mocked client-side.
+- External dependency reference: user_projects_db (placeholder; no direct connection in this repo)
+- No backend service exists in this repository; project data is mocked client-side.
 
 ## Application Architecture
 - App composition
@@ -14,55 +14,54 @@ The User Projects Frontend is a Create React App (CRA) based UI that renders a l
   - Navbar (top)
   - ProjectsPage (main content)
 - Data layer
-  - services/projects.js exports:
+  - services/projects.js
     - fetchProjects(): simulates async data retrieval (supports error simulation via ?error=1)
     - useProjects(): React hook returning { data, loading, error, refetch }
 
 Key modules:
-- src/App.js: Root composition (AuthProvider -> Navbar + ProjectsPage)
+- src/App.js: Root composition (AuthProvider → Navbar + ProjectsPage)
 - src/context/AuthContext.jsx: Mock authentication context (user object)
 - src/services/projects.js: Sample data + data-fetch hook
-- src/pages/ProjectsPage.jsx: Fetching, responsive grid rendering, error/empty/loading states
+- src/pages/ProjectsPage.jsx: Data fetch, responsive grid rendering, error/empty/loading states
 - src/components/Navbar.jsx: Title and user initials avatar
-- src/components/ProjectCard.jsx: Displays project details and status badge
-- src/index.css: Design tokens and component utility classes
+- src/components/ProjectCard.jsx: Project details and status badge
+- src/index.css: Design tokens and utility classes
 
-## Component Responsibilities
-- App: Root layout and providers; sets main container.
-- Navbar: Shows app title and the authenticated user’s name/initials.
-- ProjectsPage: Fetches data, renders different UI states, and orchestrates the responsive grid.
-- ProjectCard: Presents project info with standardized badges and updated date.
-- AuthProvider/useAuth: Supplies mock user data globally.
-
-## Data Flow
+## Architecture Diagram
 ```mermaid
-sequenceDiagram
-  participant U as User
-  participant A as App
-  participant P as ProjectsPage
-  participant S as useProjects Hook
-  participant D as fetchProjects (mock)
-  U->>A: Navigate to app
-  A->>P: Render ProjectsPage
-  P->>S: Call useProjects()
-  S->>D: fetchProjects()
-  D-->>S: Resolve list (or reject on ?error=1)
-  S-->>P: { data, loading, error, refetch }
-  P-->>U: Render skeletons, error card, or ProjectCard grid
+flowchart LR
+  subgraph React_App["React App"]
+    A["App"]
+    N["Navbar"]
+    P["ProjectsPage"]
+    C["ProjectCard"]
+    H["AuthContext"]
+    S["useProjects hook"]
+  end
+  D["fetchProjects (mock data)"]
+  ENV["REACT_APP_API_BASE_URL (future)"]
+
+  A --> N
+  A --> P
+  P --> S
+  S --> D
+  H --> N
+  H --> P
+  P --> C
+  ENV -. future config .- S
 ```
 
 ## Data Model
-Project (UI-level):
-- id: string
-- name: string
-- description: string
-- updatedAt: number (epoch ms)
-- status: "Active" | "Paused" | "Archived"
-
-AuthContext User:
-- id: string
-- name: string
-- email: string
+- Project (UI-level):
+  - id: string
+  - name: string
+  - description: string
+  - updatedAt: number (epoch ms)
+  - status: "Active" | "Paused" | "Archived"
+- AuthContext User:
+  - id: string
+  - name: string
+  - email: string
 
 ## Styling System
 - Tokens in src/index.css:
@@ -71,44 +70,44 @@ AuthContext User:
 - Utility classes:
   - .badge and variants (.badge--active, .badge--paused, .badge--archived)
   - .card, .skeleton, animation keyframes
-
-Note: src/styles/theme.css also defines duplicated tokens. Consolidation is recommended to ensure one source of truth (prefer index.css).
+- Note: src/styles/theme.css also defines duplicated tokens; consolidation into a single source (prefer index.css) is recommended.
 
 ## Error Handling and Loading
-- Loading: ProjectsPage shows skeleton card placeholders.
-- Error: An alert-styled card displays the error and a Try again button that calls refetch.
+- Loading: ProjectsPage shows skeleton card placeholders until data resolves.
+- Error: An alert-styled card displays error details and a Try again button that calls refetch.
 - Empty: A clearly worded card indicates no projects are available.
 
 ## Authentication and Authorization
 - Current: Mock AuthContext with static user.
-- Future: Replace with real identity provider (OIDC/OAuth). Use secure token handling (HttpOnly cookies or in-memory tokens) and enforce backend authorization. UI should render only permitted features (e.g., creation button gated by role).
+- Future: Replace with real identity provider (OIDC/OAuth). Use secure token handling (HttpOnly cookies or in-memory tokens) and enforce backend authorization. Conditionally render features based on role/permissions.
 
-## Audit and GxP Strategy
-- Current scope is read-only; therefore, audit trail persistence on the server is not implemented.
-- Strategy for future:
-  - For READ: Server logs who accessed which project list and when (userId, timestamp ISO 8601, resource, parameters, result count).
-  - For WRITE (future): Server logs before/after states, reason for change, and user identity; UI can capture intent and pass metadata.
-- Electronic signature is not required for read-only operations. If future modal supports modifications, electronic signature requirements must be added.
+## Compliance and GxP Strategy
+- Read-only scope; no server-side audit trail implementation within this repo.
+- Future READ logging (server): capture userId, ISO 8601 timestamp, resource, parameters, and result count.
+- Future WRITE operations (not in scope): capture before/after state, reason for change, user identity; consider electronic signatures for GxP-critical steps.
 
 ## Security and Privacy
-- No secrets or tokens stored in this repo. For API integration:
+- No secrets or tokens are stored.
+- Future API integration should:
   - Use REACT_APP_API_BASE_URL for configuration.
-  - Avoid exposing credentials in client-side code.
-  - Validate and sanitize incoming data before render.
+  - Avoid exposing credentials; prefer secure cookie sessions or in-memory tokens.
+  - Validate and sanitize all payloads rendered by the UI.
 
-## Performance Considerations
-- Lightweight rendering with functional components and hooks.
-- Skeleton UI ensures perceived performance.
-- Responsive grid uses width-based logic to adjust columns (1–3) on resize.
+## Performance and Observability
+- Lightweight functional components and hooks minimize overhead.
+- Skeleton UI improves perceived performance.
+- Responsive grid adjusts based on container width.
+- Observability (future): correlate client telemetry with server-side audit logs for READ events.
 
 ## Testing Approach
-- Unit Tests:
-  - ProjectCard: renders fields, applies correct badge classes.
+- Unit tests:
+  - ProjectCard: fields rendering and badge classes.
   - ProjectsPage: loading, empty, success, error+retry behaviors.
-- Integration Tests (future):
-  - With real API, test auth flow, data fetching, and server-side audit logging.
-- Validation Tests:
-  - Data contract adherence when integrating backend.
+  - App: heading presence verification.
+- Integration tests (future):
+  - Auth flow, data fetching from real API, server-side audit logging.
+- Validation tests:
+  - Data contract adherence on API integration.
 
 ## Deployment and Environment
 - CRA-based scripts (start/build/test).
@@ -116,20 +115,23 @@ Note: src/styles/theme.css also defines duplicated tokens. Consolidation is reco
 - Future .env recommendation: REACT_APP_API_BASE_URL.
 
 ## Release Gates and Quality
-- Accessibility verification.
-- Unit tests passing with target coverage.
+- Accessibility verification (focus-visible, roles and ARIA).
+- Unit tests passing with target coverage (≥80% for in-scope modules).
 - Error and empty states verified.
 - Compliance documentation for ALCOA+ mapping and audit strategy included.
 - Style adherence to Ocean Professional theme.
 
+## Open Risks and Follow-ups
+- Token duplication across index.css and styles/theme.css may lead to inconsistencies; consolidation recommended.
+- Concrete API spec and auth provider selection pending; integration plan will adjust accordingly.
+
 ## Future Enhancements
-- Real API client module (using REACT_APP_API_BASE_URL).
-- Real authentication and authorization with role gates.
-- Project detail modal implementation.
-- Theme token consolidation and CSS refactoring for reusability.
+- Real API client module using REACT_APP_API_BASE_URL.
+- Real authentication with role-based UI gating.
+- Project detail view (modal or route).
+- Token consolidation and CSS refactoring for reusability.
 - Routing support for dedicated detail pages.
 
-``` 
 Sources:
 - user_projects_frontend/src/App.js
 - user_projects_frontend/src/context/AuthContext.jsx
@@ -139,4 +141,4 @@ Sources:
 - user_projects_frontend/src/components/ProjectCard.jsx
 - user_projects_frontend/src/index.css
 - user_projects_frontend/ARCHITECTURE.md
-```
+- user_projects_frontend/README.md
