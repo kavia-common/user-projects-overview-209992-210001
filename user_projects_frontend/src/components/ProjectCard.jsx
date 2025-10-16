@@ -17,7 +17,6 @@ export default function ProjectCard({ project }) {
   return (
     <article
       className="card"
-      role="article"
       tabIndex={0}
       aria-label={`Project ${name}`}
       style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}

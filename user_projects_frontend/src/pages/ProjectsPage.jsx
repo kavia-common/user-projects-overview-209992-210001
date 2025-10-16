@@ -1,5 +1,6 @@
 import React from 'react';
 import { useProjects } from '../services/projects';
+import ProjectCard from '../components/ProjectCard';
 
 /**
  * PUBLIC_INTERFACE
@@ -135,11 +136,8 @@ export default function ProjectsPage() {
           </div>
         )}
 
-        {!loading && data.map(p => (
-          <React.Suspense key={p.id} fallback={<div className="card" style={{ padding: 18 }} />}>
-            {/* inline import not necessary; ProjectCard is synchronous */}
-            {React.createElement(require('../components/ProjectCard.jsx').default, { project: p })}
-          </React.Suspense>
+        {!loading && data.map((p) => (
+          <ProjectCard key={p.id} project={p} />
         ))}
       </div>
     </section>
